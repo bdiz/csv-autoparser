@@ -8,6 +8,8 @@ CSV::AutoParser automatically parses a CSV file given a user specified header ro
 
 ## Usage
 
+    require 'csv/autoparser'
+
     # ID header row by CSV line number.
     csv = CSV::AutoParser.new("my_file.csv") {|csv_line_number, header_row| csv_line_number == 1 }
     csv.rows.each {|row| puts row.full_name }
