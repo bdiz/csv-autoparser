@@ -17,7 +17,7 @@ class CSV
 
     attr_reader :pre_header_rows, :rows
 
-    def initialize file, &is_header
+    def initialize file, opts={}, &is_header
       map = {}
       csv_line_number = 0
       @rows = []
@@ -36,13 +36,18 @@ class CSV
             next if column_name.nil? or column_name.strip.empty?
             @rows.last.define_singleton_method(column_to_method_name(column_name)) { self[column_offset] }
           end
+          [opts[:optional_headers]].flatten.compact.each do |optional_header|
+            unless @rows.last.respond_to? optional_header
+              @rows.last.define_singleton_method(column_to_method_name(optional_header)) { nil }
+            end
+          end
         end
       end
       raise HeaderRowNotFound, "Could not find header row in #{file}." if map.empty?
     end
 
     def column_to_method_name name
-      name.downcase.strip.gsub(/\s+/, '_').gsub(/-+/, '_').gsub(/[^\w]/, '')
+      name.to_s.downcase.strip.gsub(/\s+/, '_').gsub(/-+/, '_').gsub(/[^\w]/, '')
     end
 
   end

@@ -55,4 +55,22 @@ describe CSV::AutoParser do
     File.basename(csv2.rows.first.csv_file).must_equal "persons2.csv"
   end
 
+  it "will define methods which return nil for optional columns not present in CSV" do
+    csv = CSV::AutoParser.new(fixture_file_path('persons.csv')) do |line_num, header_row| 
+      ["name", "Job title"].all? {|cell| header_row.include?(cell) } 
+    end
+    lambda { csv.my_optional_header }.must_raise(NoMethodError)
+    csv = CSV::AutoParser.new(fixture_file_path('persons.csv'), optional_headers: :my_optional_header) do |line_num, header_row| 
+      ["name", "Job title"].all? {|cell| header_row.include?(cell) } 
+    end
+    csv.rows.first.my_optional_header.must_be_nil
+    csv = CSV::AutoParser.new(fixture_file_path('persons.csv'), optional_headers: [:my_optional_header, "Zip Code"]) do |line_num, header_row| 
+      ["name", "Job title"].all? {|cell| header_row.include?(cell) } 
+    end
+    csv.rows.first.name.must_equal "Jon Smith"
+    lambda { csv.rows.first.my_mandatory_header }.must_raise(NoMethodError)
+    csv.rows.first.zip_code.must_be_nil
+    csv.rows.last.my_optional_header.must_be_nil
+  end
+
 end
