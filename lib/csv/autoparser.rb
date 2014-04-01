@@ -33,6 +33,7 @@ class CSV
         else
           @rows << Row::create(row, file, csv_line_number)
           map.each_pair do |column_name, column_offset|
+            next if column_name.nil? or column_name.strip.empty?
             @rows.last.define_singleton_method(column_to_method_name(column_name)) { self[column_offset] }
           end
         end
