@@ -35,7 +35,7 @@ csv.each {|row| puts "#{row.name} is a #{row.age} year old #{row.job_title}." }
 
 # -OR- ID header row by column header names.
 csv = CSV::AutoParser.new(data) do |line_num, header_row| 
-["name", "Job title"].all? {|field| header_row.include?(field) } 
+  ["name", "Job title"].all? {|field| header_row.include?(field) } 
 end
 csv.is_a?(CSV)        # => true
 table = csv.read      # => CSV::Table
