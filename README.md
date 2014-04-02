@@ -1,6 +1,12 @@
 # CSV::AutoParser
 
-CSV::AutoParser automatically parses a CSV file given a user specified header row.
+CSV::AutoParser automatically parses a CSV file given a user specified header row and
+adds method style accessors to the CSV::Row data. 
+
+All functionality of the standard Ruby CSV class is accessible since CSV::AutoParser
+inherits from CSV. CSV::AutoParser objects behave just like CSV objects when not
+provided a block (though method style accessors will still be avaliable on CSV::Row
+objects).
 
 ## Installation
 
@@ -8,27 +14,36 @@ CSV::AutoParser automatically parses a CSV file given a user specified header ro
 
 ## Usage
 
+```ruby
     require 'csv/autoparser'
 
+    data = <<CSV
+    "this is",not,"the header"
+    "the real header","is easy","to find"
+    name,"Job title",age
+    "Jon Smith",blacksmith,55
+    "Jimmy Johnson",farmer,34
+    "Kimmy Kimmson","pig wrangler",29
+    CSV
+
     # ID header row by CSV line number.
-    csv = CSV::AutoParser.new("persons.csv") {|csv_line_number, header_row| csv_line_number == 1 }
-    csv.rows.each {|row| puts row.full_name }
+    csv = CSV::AutoParser.new(data) {|line_number, header_row| line_number == 3 }
+    csv.each {|row| puts "#{row.name} is a #{row.age} year old #{row.job_title}." }
+    # Jon Smith is a 55 year old blacksmith.
+    # Jimmy Johnson is a 34 year old farmer.
+    # Kimmy Kimmson is a 29 year old pig wrangler.
 
     # -OR- ID header row by column header names.
-    csv = CSV::AutoParser.new("persons.csv") do |line_num, header_row| 
-      ["name", "Job title"].all? {|cell| header_row.include?(cell) } 
+    csv = CSV::AutoParser.new(data) do |line_num, header_row| 
+    ["name", "Job title"].all? {|field| header_row.include?(field) } 
     end
-    csv.rows.first.name      # => "Jon Smith"
-    csv.rows.first.job_title # => "blacksmith"
+    csv.is_a?(CSV)        # => true
+    table = csv.read      # => CSV::Table
+    table.first.name      # => "Jon Smith"
+    table[-1].job_title   # => "pig wrangler"
+```
 
-## More usage options...
-
-    # Parsing multiple CSVs and getting NoMethodError for optional column headers?
-    csv = CSV::AutoParser.new("persons.csv", optional_headers: ["State", "Zip Code"]) {|l, hr| l == 1 }
-    csv.rows.first.name      # => "bob"
-    csv.rows.first.state     # => nil
-    csv.rows.first.zip_code  # => nil
-    csv.rows.first.nickname  # => raises NoMethodError
+More usage examples can be seen in examples/.
 
 ## Contributing
 

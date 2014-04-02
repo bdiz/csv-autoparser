@@ -24,23 +24,11 @@ class CSV
       header.to_s.downcase.strip.gsub(/\s+/, '_').gsub(/-+/, '_').gsub(/[^\w]/, '').to_sym
     end
 
-    # CSV::Row methods will be defined to return nil. If an actual header column exists
-    # the value in this column will override the nil return value/method.
-    def self.define_optional_headers *headers
-      [headers].flatten.compact.each do |h|
-        method_name = convert_header_to_method_name(h)
-        if CSV::Row.instance_methods.include? method_name
-          raise "Cannot define optional header with the same name as an existing CSV::Row method: #{method_name}"
-        end
-        CSV::Row.instance_eval { define_method(method_name) { nil } }
-      end
-    end
-
     class PreHeaderRow < Array
-      attr_reader :file, :line_number
-      def self.create original_row, file, line_number
+      attr_reader :file, :line
+      def self.create original_row, file, line
         row = PreHeaderRow.new(original_row)
-        row.instance_eval { @file = file; @line_number = line_number }
+        row.instance_eval { @file = file; @line = line }
         return row
       end
     end
@@ -49,12 +37,13 @@ class CSV
 
     attr_reader :pre_header_rows, :header_line_number
 
-    # +data+ can be path of CSV file in addition to String and IO object like CSV.new.
-    # All CSV.new options are supported via +opts+ with these nuances:
-    #   * If an +is_header+ block is provided, it overrides the CSV.new +:headers+ option.
+    # +data+ can be path of CSV file in addition to a CSV String or an IO object like CSV.new.
+    # All CSV.new options are supported via +opts+. If an +is_header+ block is provided, it 
+    # takes precedence over the CSV.new +:headers+ option.
     def initialize data, opts={}, &is_header
       @header_line_number = nil
       @pre_header_rows = []
+      @optional_headers = [opts.delete(:optional_headers)].flatten.compact
       if data.is_a?(String) and File.exists?(data)
         file = data
         data = File.open(data) 
@@ -81,11 +70,25 @@ class CSV
         end
         raise HeaderRowNotFound, "Could not find header row#{file ? " in #{file}" : "" }." if @header_line_number.nil?
         data_io.seek header_pos
+        data_io = StringIO.new(data_io.read)
         super(data_io, opts.merge(:headers => true))
       else
         @header_line_number = 1 if opts[:headers] == :first_row or opts[:headers] == true
         super(data, opts)
       end
+    end
+
+    alias_method :orig_shift, :shift
+
+    def shift
+      row = orig_shift
+      [@optional_headers].flatten.compact.each do |h|
+        method_name = self.class.convert_header_to_method_name(h)
+        unless row.respond_to? method_name
+          row.define_singleton_method(method_name) {nil}
+        end
+      end
+      return row
     end
 
   end

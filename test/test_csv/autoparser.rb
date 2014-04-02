@@ -31,7 +31,7 @@ describe CSV::AutoParser do
     parser.pre_header_rows.first.last.must_equal "years of age"
     parser.pre_header_rows.last.first.must_equal "bob"
     File.basename(parser.pre_header_rows.last.file).must_equal "persons.csv"
-    parser.pre_header_rows.last.line_number.must_equal 2
+    parser.pre_header_rows.last.line.must_equal 2
   end
 
   it "will raise an exception if it can't find the header row" do
@@ -59,16 +59,19 @@ describe CSV::AutoParser do
   end
 
   it "will define methods which return nil for optional columns not present in CSV" do
-    table = CSV::AutoParser.new(fixture_file_path('persons.csv')) do |line_num, header_row| 
+    table1 = CSV::AutoParser.new(fixture_file_path('persons.csv')) do |line_num, header_row| 
       ["name", "Job title"].all? {|cell| header_row.include?(cell) } 
     end.read
-    lambda { table.first.my_optional_header }.must_raise(NoMethodError)
-    CSV::AutoParser.define_optional_headers :my_optional_header, "Zip Code", :name
-    table.first.my_optional_header.must_be_nil
-    table.first.name.must_equal "Jon Smith"
-    lambda { table.first.my_mandatory_header }.must_raise(NoMethodError)
-    table.first.zip_code.must_be_nil
-    table[-1].my_optional_header.must_be_nil
+    lambda { table1.first.my_optional_header }.must_raise(NoMethodError)
+    table2 = CSV::AutoParser.new(fixture_file_path('persons.csv'), optional_headers: [:my_optional_header, "Zip Code", :name]) do |line_num, header_row| 
+      ["name", "Job title"].all? {|cell| header_row.include?(cell) } 
+    end.read
+    table2.first.my_optional_header.must_be_nil
+    lambda { table1.first.my_optional_header }.must_raise(NoMethodError)
+    table2.first.name.must_equal "Jon Smith"
+    lambda { table2.first.my_mandatory_header }.must_raise(NoMethodError)
+    table2.first.zip_code.must_be_nil
+    table2[-1].my_optional_header.must_be_nil
   end
 
   it "will pass along CSV.new options" do
