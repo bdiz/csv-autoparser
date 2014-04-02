@@ -1,5 +1,5 @@
 class CSV
-  class AutoParser
-    VERSION = "0.1.0"
+  class AutoParser < CSV
+    VERSION = "1.0.0"
   end
 end
