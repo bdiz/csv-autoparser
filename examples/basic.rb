@@ -4,12 +4,12 @@ $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'csv/autoparser'
 
 data = <<CSV
-"this is",not,"the header"
-"the real header","is easy","to find"
-name,"Job title",age
-"Jon Smith",blacksmith,55
-"Jimmy Johnson",farmer,34
-"Kimmy Kimmson","pig wrangler",29
+this is,not,the header
+the real header,is easy,to find
+name,Job title,age
+Jon Smith,blacksmith,55
+Jimmy Johnson,farmer,34
+Kimmy Kimmson,pig wrangler,29
 CSV
 
 ########################################

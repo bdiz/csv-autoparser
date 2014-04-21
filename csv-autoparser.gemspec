@@ -7,10 +7,9 @@ Gem::Specification.new do |spec|
   spec.name          = "csv-autoparser"
   spec.version       = CSV::AutoParser::VERSION
   spec.authors       = ["Ben Delsol"]
-  spec.email         = [] # contact me via github (username: bdiz)
   spec.summary       = %q{Can parse a CSV file automatically given a user specified header row.}
   spec.description   = %q{}
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/bdiz/csv-autoparser"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
