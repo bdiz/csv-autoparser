@@ -30,8 +30,27 @@ describe CSV::AutoParser do
     parser.header_line_number.must_equal 3
     parser.pre_header_rows.first.last.must_equal "years of age"
     parser.pre_header_rows.last.first.must_equal "bob"
-    File.basename(parser.pre_header_rows.last.file).must_equal "persons.csv"
-    parser.pre_header_rows.last.line.must_equal 2
+  end
+
+  it "it will give file path, line and column number information" do
+    csv_path = fixture_file_path('persons.csv')
+    parser = CSV::AutoParser.new(csv_path) do |line_num, header_row| 
+      ["name", "Job title"].all? {|cell| header_row.include?(cell) } 
+    end
+    line_number = 1
+    parser.file_path.must_equal csv_path
+    parser.pre_header_rows.each do |row|
+      row.file_path.must_equal csv_path
+      row.line_number.must_equal line_number
+      line_number += 1
+    end
+    table = parser.read
+    line_number = parser.header_line_number + 1
+    table.each do |row|
+      row.file_path.must_equal csv_path
+      row.line_number.must_equal line_number
+      line_number += 1
+    end
   end
 
   it "will raise an exception if it can't find the header row" do
@@ -95,7 +114,12 @@ describe CSV::AutoParser do
   end
 
   it "should work just like CSV.new when not passed a block except that it can now take a file path as data too" do 
-    input_objects = [fixture_file_path('persons.csv'), File.open(fixture_file_path('persons.csv')), File.open(fixture_file_path('persons.csv'))]
+    input_objects = [
+      fixture_file_path('persons.csv'), 
+      File.open(fixture_file_path('persons.csv')), 
+      File.read(fixture_file_path('persons.csv')), 
+      StringIO.new(File.read(fixture_file_path('persons.csv')))
+    ]
     input_objects.each do |obj|
       parser = CSV::AutoParser.new(obj, header_converters: :symbol, headers: :first_row)
       parser.header_line_number.must_equal 1
@@ -105,6 +129,12 @@ describe CSV::AutoParser do
       table.first[:fullname].must_equal "bob"
       # method names are based off of converted header names!
       table.first.fullname.must_equal "bob"
+      if obj.is_a?(String) and File.exists?(obj)
+        table.first.file_path.must_equal fixture_file_path('persons.csv')
+      else
+        table.first.file_path.must_be_nil
+      end
+      table.first.line_number.must_equal 2
     end
     parser = CSV::AutoParser.new(fixture_file_path('persons.csv'), header_converters: :symbol, headers: "first_col,second_col,third_col,fourth_col")
     parser.header_line_number.must_equal nil
@@ -113,6 +143,8 @@ describe CSV::AutoParser do
     table.length.must_equal 6
     table[0].first_col.must_equal "full-name"
     table[1].first_col.must_equal "bob"
+    table[1].file_path.must_equal fixture_file_path('persons.csv')
+    table[1].line_number.must_equal 2
   end
 
 end
