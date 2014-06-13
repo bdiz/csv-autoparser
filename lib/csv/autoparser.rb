@@ -4,7 +4,7 @@ require "csv/autoparser/version"
 class CSV
 
   class Row
-    attr_reader :file_path, :line_number
+    attr_reader :line_number
     alias_method :orig_initialize, :initialize
     # Defines method style accessors based on header row names.
     def initialize(*args)
@@ -28,10 +28,10 @@ class CSV
     # The rows found before the header row are paired with file and line information. These
     # objects are available through CSV::AutoParser#pre_header_rows.
     class PreHeaderRow < Array
-      attr_reader :file_path, :line_number
+      attr_reader :line_number
       def self.create original_row, file, line
         row = PreHeaderRow.new(original_row)
-        row.instance_eval { @file_path = file; @line_number = line }
+        row.instance_eval { @line_number = line }
         return row
       end
     end
@@ -90,7 +90,6 @@ class CSV
     def shift
       row = orig_shift
       if row and row.is_a?(Row) and row.line_number.nil? # sometimes nil. sometimes not a row. sometimes row is repeated.
-        row.instance_variable_set(:@file_path, @file_path)
         row.instance_variable_set(:@line_number, @data_io.lineno + (@header_line_number || 1) - 1) #if @data_io
       end
       [@optional_headers].flatten.compact.each do |h|

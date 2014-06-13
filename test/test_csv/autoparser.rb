@@ -32,7 +32,7 @@ describe CSV::AutoParser do
     parser.pre_header_rows.last.first.must_equal "bob"
   end
 
-  it "it will give file path, line and column number information" do
+  it "it will give file path and line number" do
     csv_path = fixture_file_path('persons.csv')
     parser = CSV::AutoParser.new(csv_path) do |line_num, header_row| 
       ["name", "Job title"].all? {|cell| header_row.include?(cell) } 
@@ -40,14 +40,12 @@ describe CSV::AutoParser do
     line_number = 1
     parser.file_path.must_equal csv_path
     parser.pre_header_rows.each do |row|
-      row.file_path.must_equal csv_path
       row.line_number.must_equal line_number
       line_number += 1
     end
     table = parser.read
     line_number = parser.header_line_number + 1
     table.each do |row|
-      row.file_path.must_equal csv_path
       row.line_number.must_equal line_number
       line_number += 1
     end
@@ -130,20 +128,20 @@ describe CSV::AutoParser do
       # method names are based off of converted header names!
       table.first.fullname.must_equal "bob"
       if obj.is_a?(String) and File.exists?(obj)
-        table.first.file_path.must_equal fixture_file_path('persons.csv')
+        parser.file_path.must_equal fixture_file_path('persons.csv')
       else
-        table.first.file_path.must_be_nil
+        parser.file_path.must_be_nil
       end
       table.first.line_number.must_equal 2
     end
     parser = CSV::AutoParser.new(fixture_file_path('persons.csv'), header_converters: :symbol, headers: "first_col,second_col,third_col,fourth_col")
     parser.header_line_number.must_equal nil
     parser.pre_header_rows.must_be_empty
+    parser.file_path.must_equal fixture_file_path('persons.csv')
     table = parser.read
     table.length.must_equal 6
     table[0].first_col.must_equal "full-name"
     table[1].first_col.must_equal "bob"
-    table[1].file_path.must_equal fixture_file_path('persons.csv')
     table[1].line_number.must_equal 2
   end
 
